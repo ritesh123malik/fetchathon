@@ -268,7 +268,14 @@ def build_network(port=8010):
             traceback.print_exc()
             answer=f"RupeePilot encountered an issue processing your request: {exc}. Please verify your input or try sending 'demo'."
 
-        await ctx.send(sender,ChatMessage(timestamp=datetime.now(timezone.utc),msg_id=uuid4(),content=[TextContent(type='text',text=answer)]))
+        # Dispatch chat response with retry
+        for attempt in range(2):
+            try:
+                await ctx.send(sender,ChatMessage(timestamp=datetime.now(timezone.utc),msg_id=uuid4(),content=[TextContent(type='text',text=answer)]))
+                break
+            except Exception as send_err:
+                if attempt == 0:
+                    await asyncio.sleep(1)
 
     @protocol.on_message(ChatAcknowledgement)
     async def ack(ctx:Context,sender:str,msg:ChatAcknowledgement): pass
