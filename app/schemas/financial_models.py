@@ -75,6 +75,20 @@ class Bill(StrictModel):
             return date.today()
         return v
 
+    @field_validator("priority", mode="before")
+    @classmethod
+    def default_priority(cls, v):
+        if v is None or v == "":
+            return BillPriority.MANDATORY
+        return v
+
+    @field_validator("paid", mode="before")
+    @classmethod
+    def default_paid(cls, v):
+        if v is None or v == "":
+            return False
+        return bool(v)
+
 
 class SavingsGoal(StrictModel):
     """A user's savings target."""
@@ -84,6 +98,13 @@ class SavingsGoal(StrictModel):
     current_amount: Decimal = Field(default=Decimal("0"), ge=0)
     monthly_contribution: Decimal = Field(default=Decimal("0"), ge=0)
     target_date: Optional[date] = None
+
+    @field_validator("current_amount", "monthly_contribution", mode="before")
+    @classmethod
+    def default_goal_amounts(cls, v):
+        if v is None or v == "":
+            return Decimal("0")
+        return v
 
 
 class BudgetSummary(StrictModel):

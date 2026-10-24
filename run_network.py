@@ -69,10 +69,16 @@ def prepare_chat_payload(draft):
         b_name = (b.get('name') or '').lower()
         if 'medical' in b_name or 'emergency' in b_name or 'unexpected' in b_name or (b_amount == shock and shock > 0):
             continue
-        clean_bills.append(b)
+        clean_bills.append({
+            'name': b.get('name') or 'Bill',
+            'amount': str(b_amount),
+            'due_date': b.get('due_date'),
+            'priority': b.get('priority') or 'mandatory',
+            'paid': bool(b.get('paid', False))
+        })
 
     if bills > 0 and clean_bills:
-        current_sum = sum(Decimal(str(b.get('amount', 0))) for b in clean_bills)
+        current_sum = sum(Decimal(str(b['amount'])) for b in clean_bills)
         if current_sum > bills:
             profile['fixed_bills'] = str(current_sum)
     else:
@@ -82,9 +88,15 @@ def prepare_chat_payload(draft):
     if sav > 0:
         g_sum = Decimal(0)
         for g in draft.get('goals', []):
-            contrib = Decimal(str(g.get('monthly_contribution', 0)))
+            contrib = Decimal(str(g.get('monthly_contribution') or 0))
             if g_sum + contrib <= sav:
-                clean_goals.append(g)
+                clean_goals.append({
+                    'name': g.get('name') or 'Goal',
+                    'target_amount': str(g.get('target_amount') or 1000),
+                    'current_amount': str(g.get('current_amount') or 0),
+                    'monthly_contribution': str(contrib),
+                    'target_date': g.get('target_date')
+                })
                 g_sum += contrib
 
     return {'profile': profile, 'bills': clean_bills, 'goals': clean_goals}
